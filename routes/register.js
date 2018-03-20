@@ -32,43 +32,51 @@ router.post('/', function(req, res, next) {
 				//檢查ID有沒有被註冊過
 				if (signupdata.length === 0) {
 					if(req.body.TransactionKey.length >= 8){
-						//創建認證碼
-						var email = req.body.ID + "@nccu.edu.tw";
-						var Info = req.body.name + req.body.ID;
-						var transaction = md5(req.body.TransactionKey.toString('binary'));
-						verifyKey = md5(Info.toString('binary'));
-						console.log(verifyKey);
-						new Signupdata({
-							Username : req.body.name,
-							Email : email,
-							StudentID : req.body.ID,
-							TransactionKey : transaction,
-							Password : req.body.password,
-							CreateDate : Date.now(),
-							Verifykey: verifyKey
-						}).save(function(err) { //將帳密儲存到資料庫裡
-							if (err) {
-								console.log('Signupdata Fail to save to DB.');
-								return;
-							}
-							console.log('Signupdata Save to DB.');
-							
-							mailTransport.sendMail({
-								from : 'certificationnccu@gmail.com',
-								to : email,
-								subject : '政大點數系統驗證信',
-								html : '<h2>這是您的驗證碼</h2> <p>' + verifyKey + '</p>',
-							}, function(err) {
+						if(req.body.password.length >= 8){
+							//創建認證碼
+							var email = req.body.ID + "@nccu.edu.tw";
+							var Info = req.body.name + req.body.ID;
+							var transaction = md5(req.body.TransactionKey.toString('binary'));
+							var password = md5(req.body.password.toString('binary'));
+							verifyKey = md5(Info.toString('binary'));
+							console.log(verifyKey);
+							new Signupdata({
+								Username : req.body.name,
+								Email : email,
+								StudentID : req.body.ID,
+								TransactionKey : transaction,
+								Password : password,
+								CreateDate : Date.now(),
+								Verifykey: verifyKey
+							}).save(function(err) { //將帳密儲存到資料庫裡
 								if (err) {
-									console.error('Unable to send confirmation: ' + err.stack);
+									console.log('Signupdata Fail to save to DB.');
+									return;
 								}
+								console.log('Signupdata Save to DB.');
+								
+								mailTransport.sendMail({
+									from : 'certificationnccu@gmail.com',
+									to : email,
+									subject : '政大點數系統驗證信',
+									html : '<h2>這是您的驗證碼</h2> <p>' + verifyKey + '</p>',
+								}, function(err) {
+									if (err) {
+										console.error('Unable to send confirmation: ' + err.stack);
+									}
+								});
+								//req.session.ID = req.body.ID;
+								//req.session.username = req.body.name;
+								//req.session.password = req.body.password;
+								res.redirect('../verify');
+							      
 							});
-							//req.session.ID = req.body.ID;
-							//req.session.username = req.body.name;
-							//req.session.password = req.body.password;
-							res.redirect('../verify');
-						      
-						});
+						}
+						else{
+							res.render('register', {
+								message : "個人密碼長度須為8個字以上 "
+							});
+						}
 					}
 					else{
 						res.render('register', {
